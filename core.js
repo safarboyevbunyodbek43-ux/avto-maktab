@@ -89,6 +89,16 @@ export function createCore({ store, auth, exam }) {
     for (const t of Object.values(byTopic)) t.pct = Math.round((100 * t.ok) / t.n);
     return { byStudent, byTopic };
   }
+  // hujjat shu markazniki ekanini tekshiradi (boshqa markaz ma'lumotiga tegib bo'lmasin)
+  async function ownDoc(col, id, label) {
+    const d = await store.get(col, String(id));
+    if (!d || d.schoolId !== me.schoolId) throw new HttpError(404, label + ' topilmadi');
+    return d;
+  }
+  // xatolikda yarim yaratilgan kirish hisobini qoldirmaslik uchun
+  async function dropAccount() {
+    try { if (auth.deleteCurrent) await auth.deleteCurrent(); else await auth.signOut(); } catch { /* */ }
+  }
   async function wipeStudentData(id) {
     for (const col of ['attendance', 'grades', 'payments', 'attempts']) {
       const rows = await store.query(col, [SC(), ['student_id', '==', id]]);
@@ -117,8 +127,9 @@ export function createCore({ store, auth, exam }) {
     const id = await store.add('groups', { name: needStr(c.body.name, 'Guruh nomi', 80), price: needInt(c.body.price || 0, 'Narx', 0, 1e10), start_date: c.body.start_date || null, schoolId: me.schoolId, created: nowIso() });
     return { id };
   });
-  route('PUT', '/api/groups/:id', T, async (c) => { await store.update('groups', c.params.id, { name: needStr(c.body.name, 'Guruh nomi', 80), price: needInt(c.body.price || 0, 'Narx', 0, 1e10) }); return { ok: true }; });
+  route('PUT', '/api/groups/:id', T, async (c) => { await ownDoc('groups', c.params.id, 'Guruh'); await store.update('groups', c.params.id, { name: needStr(c.body.name, 'Guruh nomi', 80), price: needInt(c.body.price || 0, 'Narx', 0, 1e10) }); return { ok: true }; });
   route('DELETE', '/api/groups/:id', T, async (c) => {
+    await ownDoc('groups', c.params.id, 'Guruh');
     const st = await studentsOf(c.params.id);
     if (st.length) await store.batch(st.map((s) => ({ op: 'update', col: 'users', id: s.id, data: { group_id: null } })));
     await store.del('groups', c.params.id); return { ok: true };
@@ -148,10 +159,12 @@ export function createCore({ store, auth, exam }) {
   });
   route('PUT', '/api/students/:id', T, async (c) => {
     const id = await studentOrSelf(c.params.id);
-    await store.update('users', id, { name: needStr(c.body.name, 'Ism', 100), group_id: String(c.body.group_id), phone: c.body.phone ? String(c.body.phone).slice(0, 30) : null }); return { ok: true };
+    const patch = { name: needStr(c.body.name, 'Ism', 100), phone: c.body.phone ? String(c.body.phone).slice(0, 30) : null };
+    if (c.body.group_id != null && String(c.body.group_id) !== '') { const gid = String(c.body.group_id); await ownDoc('groups', gid, 'Guruh'); patch.group_id = gid; }
+    await store.update('users', id, patch); return { ok: true };
   });
   route('DELETE', '/api/students/:id', T, async (c) => {
-    const id = String(c.params.id); const cred = await store.get('credentials', id);
+    const id = await studentOrSelf(c.params.id); const cred = await store.get('credentials', id);
     if (cred) { try { await auth.deleteUser(cred.login, cred.password); } catch { /* login hisobi qolishi mumkin, ma'lumot baribir o'chadi */ } }
     await wipeStudentData(id); return { ok: true };
   });
@@ -185,7 +198,8 @@ export function createCore({ store, auth, exam }) {
   route('POST', '/api/attendance', T, async (c) => {
     const date = needDate(c.body.date); if (!Array.isArray(c.body.records)) throw bad('records kerak');
     const ok = ['present', 'absent', 'late', 'excused']; const ops = [];
-    for (const r of c.body.records) { if (!ok.includes(r.status)) continue; ops.push({ op: 'set', col: 'attendance', id: `${r.student_id}_${date}`, data: { student_id: String(r.student_id), date, status: r.status, schoolId: me.schoolId } }); }
+    const mine = new Set((await studentsOf(null)).map((s) => s.id));
+    for (const r of c.body.records) { if (!ok.includes(r.status) || !mine.has(String(r.student_id))) continue; ops.push({ op: 'set', col: 'attendance', id: `${r.student_id}_${date}`, data: { student_id: String(r.student_id), date, status: r.status, schoolId: me.schoolId } }); }
     if (ops.length) await store.batch(ops); return { ok: true };
   });
   route('GET', '/api/attendance/summary', ANY, async (c) => {
@@ -210,7 +224,7 @@ export function createCore({ store, auth, exam }) {
     await store.add('grades', { schoolId: me.schoolId, student_id: sid, date: needDate(c.body.date || today()), kind: needStr(c.body.kind, 'Tur', 30), score: needInt(c.body.score, 'Baho', 1, 5), note: c.body.note ? String(c.body.note).slice(0, 300) : null, created: nowIso() });
     return { ok: true };
   });
-  route('DELETE', '/api/grades/:id', T, async (c) => { await store.del('grades', c.params.id); return { ok: true }; });
+  route('DELETE', '/api/grades/:id', T, async (c) => { await ownDoc('grades', c.params.id, 'Baho'); await store.del('grades', c.params.id); return { ok: true }; });
 
   // to'lovlar (faqat o'qituvchi)
   route('GET', '/api/payments/summary', T, async (c) => {
@@ -224,7 +238,7 @@ export function createCore({ store, auth, exam }) {
     await store.add('payments', { schoolId: me.schoolId, student_id: sid, date: needDate(c.body.date || today()), amount: needInt(c.body.amount, 'Summa', 1, 1e10), note: c.body.note ? String(c.body.note).slice(0, 200) : null, created: nowIso() });
     return { ok: true };
   });
-  route('DELETE', '/api/payments/:id', T, async (c) => { await store.del('payments', c.params.id); return { ok: true }; });
+  route('DELETE', '/api/payments/:id', T, async (c) => { await ownDoc('payments', c.params.id, "To'lov"); await store.del('payments', c.params.id); return { ok: true }; });
 
   // tahlil
   route('GET', '/api/analytics/group', T, async (c) => {
@@ -317,7 +331,7 @@ export function createCore({ store, auth, exam }) {
           { op: 'set', col: 'schools', id: sid, data: { name: schoolName, region, district, ownerId: uid, created: nowIso() } },
           { op: 'set', col: 'users', id: uid, data: { role: 'teacher', status: 'active', schoolId: sid, name, login, group_id: null, phone: null, created: nowIso() } },
         ]);
-      } catch (e) { await auth.signOut().catch(() => {}); throw new HttpError(403, "Markazni yaratib bo'lmadi. Firestore qoidalari (firestore.rules) qo'yilganini tekshiring: " + (e.message || e)); }
+      } catch (e) { await dropAccount(); throw new HttpError(403, "Markazni yaratib bo'lmadi. Firestore qoidalari (firestore.rules) qo'yilganini tekshiring: " + (e.message || e)); }
       await loadMe(uid); return { user: pub(me), exam };
     },
     // mavjud markazga qo'shilish: login va parol shu zahoti beriladi, kirish esa rahbar tasdiqlagach ochiladi
@@ -329,7 +343,7 @@ export function createCore({ store, auth, exam }) {
       const { login, uid } = await createWithLogin(firstName, password);
       const ops = [{ op: 'set', col: 'users', id: uid, data: { role, status: 'pending', schoolId, name, login, group_id: null, phone: null, created: nowIso() } }];
       if (role === 'student') ops.push({ op: 'set', col: 'credentials', id: uid, data: { login, password, schoolId } });
-      try { await store.batch(ops); } catch (e) { await auth.signOut().catch(() => {}); throw new HttpError(403, "Ro'yxatdan o'tib bo'lmadi. Firestore qoidalarini tekshiring: " + (e.message || e)); }
+      try { await store.batch(ops); } catch (e) { await dropAccount(); throw new HttpError(403, "Ro'yxatdan o'tib bo'lmadi. Firestore qoidalarini tekshiring: " + (e.message || e)); }
       await auth.signOut().catch(() => {});
       return { login, password, name, role, school: sch.name };
     },

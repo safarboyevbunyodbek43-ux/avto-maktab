@@ -83,6 +83,8 @@ export async function createFirebaseBackend(config) {
       await reauthenticateWithCredential(u, EmailAuthProvider.credential(emailOf(login), oldPw)); await updatePassword(u, newPw);
     }),
     signOut: wrap(async () => { await fbSignOut(fbAuth); }),
+    // joriy hisobni butunlay o'chiradi (ro'yxatdan o'tish yarim yo'lda xato bersa)
+    deleteCurrent: wrap(async () => { const u = fbAuth.currentUser; if (u) await fbDeleteUser(u); }),
     restore: () => new Promise((res) => { const un = onAuthStateChanged(fbAuth, (u) => { un(); res(u ? u.uid : null); }); }),
   };
   return { store, auth };
