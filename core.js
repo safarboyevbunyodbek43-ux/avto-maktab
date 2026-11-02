@@ -70,7 +70,8 @@ export function createCore({ store, auth, exam }) {
   }
   async function byStudentIds(col, ids, extra = []) {
     if (!ids.length) return [];
-    return store.query(col, [SC(), ['student_id', 'in', ids], ...extra]);
+    // bitta o'quvchi bo'lsa '==' ishlatiladi: Firebase qoidalari 'in' ro'yxatini o'quvchining o'ziniki deb tasdiqlay olmaydi
+    return store.query(col, [SC(), ids.length === 1 ? ['student_id', '==', ids[0]] : ['student_id', 'in', ids], ...extra]);
   }
   function topicAgg(statsDocs) { // statsDocs: [{id, topics}]
     const byStudent = {}; const byTopic = {};
