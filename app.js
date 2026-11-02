@@ -138,6 +138,7 @@
     for (const c of kids.flat(9)) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
     return e;
   }
+  const logo = (n = 30) => h('img', { src: 'logo.svg', alt: '', width: n, height: n, style: { verticalAlign: 'middle', marginRight: '8px', borderRadius: '8px' } });
   let toastT;
   function toast(msg, err) { const el = document.getElementById('toast'); el.textContent = msg; el.className = err ? 'err' : ''; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 3500); }
   async function api(path, method = 'GET', body) {
@@ -182,7 +183,7 @@
       ['uz', 'uzc', 'ru', 'en'].map((l) => h('option', { value: l, selected: l === st.lang }, S.uz.langs[l])));
     root.append(
       h('header', { class: 'top' }, h('div', { class: 'wrap' },
-        h('div', { class: 'brand' }, '🚗 ' + t('app'), h('small', null, t(st.user.role) + (st.user.school ? ' · ' + st.user.school.name : ''))),
+        h('div', { class: 'brand' }, logo(), t('app'), h('small', null, t(st.user.role) + (st.user.school ? ' · ' + st.user.school.name : ''))),
         h('div', { class: 'row' }, langSel, h('span', { class: 'muted' }, st.user.name), h('button', { class: 'btn ghost small', type: 'button', onclick: guard(async () => { await window.BACKEND.logout().catch(() => {}); logoutLocal(); }) }, t('logout'))))),
       h('nav', { class: 'tabs' }, h('div', { class: 'wrap' }, tabs.map((k) => h('button', { type: 'button', id: 'tab-' + k, 'aria-current': k === st.tab ? 'page' : null, onclick: () => { if (st.user.must_change) return toast(t('mustChange'), true); st.tab = k; render(); } }, t('nav_' + k))))),
       window.BACKEND.mode === 'demo' && h('div', { class: 'wrap', style: { paddingTop: '10px' } }, h('p', { class: 'chip warn', style: { margin: 0 } }, t('demoBanner'))),
@@ -208,7 +209,7 @@
   }
   function registerView() {
     const toLogin = () => { st.screen = null; st.regMode = null; st.regDone = null; render(); };
-    const wrapCard = (...kids) => h('div', { class: 'wrap' }, h('div', { class: 'login' }, h('div', { class: 'card' }, h('h1', null, '🚗 ' + t('app')), ...kids)));
+    const wrapCard = (...kids) => h('div', { class: 'wrap' }, h('div', { class: 'login' }, h('div', { class: 'card' }, h('h1', null, logo(), t('app')), ...kids)));
     const backBtn = h('button', { class: 'btn ghost small', type: 'button', onclick: toLogin }, t('haveAccount'));
     if (st.regDone) {
       const d = st.regDone; const line = `${d.school}\n${d.name}\n${t('loginName')}: ${d.login}\n${t('password')}: ${d.password}`;
@@ -258,7 +259,7 @@
   }
   function pendingView() {
     const note = h('p', { class: 'chip warn', hidden: true }, t('stillPending'));
-    return h('div', { class: 'wrap' }, h('div', { class: 'login' }, h('div', { class: 'card' }, h('h1', null, '🚗 ' + t('app')), h('h3', null, t('pendingTitle')),
+    return h('div', { class: 'wrap' }, h('div', { class: 'login' }, h('div', { class: 'card' }, h('h1', null, logo(), t('app')), h('h3', null, t('pendingTitle')),
       h('p', null, st.user.name + ' · ' + t(st.user.role) + (st.user.school ? ' · ' + st.user.school.name : '')), h('p', { class: 'muted' }, t('pendingNote')), note,
       h('div', { class: 'row' },
         h('button', { class: 'btn', type: 'button', onclick: guard(async () => { const u = await window.BACKEND.refreshMe(); if (u && u.status !== 'pending') { st.user = u; st.tab = null; render(); } else note.hidden = false; }) }, t('check')),
@@ -274,7 +275,7 @@
       try { const d = await window.BACKEND.login(login.value, pw.value); st.user = d.user; st.exam = d.exam; st.tab = null; render(); }
       catch (x) { err.textContent = x.message; err.hidden = false; }
     } },
-    h('h1', null, '🚗 ' + t('app')),
+    h('h1', null, logo(), t('app')),
     h('div', { class: 'field' }, h('label', { for: 'login' }, t('loginName')), login),
     h('div', { class: 'field' }, h('label', { for: 'password' }, t('password')), pw), err,
     h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('button', { class: 'btn', type: 'submit' }, t('login')), langSel),
