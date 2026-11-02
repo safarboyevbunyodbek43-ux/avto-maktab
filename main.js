@@ -1,4 +1,6 @@
 import { createCore } from './core.js';
+import { REGIONS } from './regions.js';
+window.REGIONS = REGIONS;
 
 const cfg = window.APP_CONFIG || {};
 const exam = { count: 20, minutes: 25, maxErrors: 2, ...(cfg.exam || {}) };
@@ -20,7 +22,7 @@ try {
     backend = createLocalBackend(); mode = 'demo';
   }
   window.BACKEND = Object.assign(createCore({ store: backend.store, auth: backend.auth, exam }), { mode });
-  const s = document.createElement('script'); s.src = 'app.js?v=1'; document.body.append(s);
+  const s = document.createElement('script'); s.src = 'app.js?v=2'; document.body.append(s);
 } catch (e) {
   fail("Ilovani yuklab bo'lmadi: " + (e && e.message ? e.message : e) + ". Internet aloqasi va config.js dagi Firebase sozlamasini tekshiring.");
 }

@@ -28,8 +28,10 @@ const needInt = (v, name, min, max) => { const n = Number(v); if (!Number.isInte
 const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'uz');
 
 export function createCore({ store, auth, exam }) {
-  let me = null; // joriy foydalanuvchi {id, role, name, login, group_id}
-  const pub = (u) => ({ id: u.id, role: u.role, name: u.name, login: u.login, group_id: u.group_id ?? null, must_change: false });
+  let me = null; // joriy foydalanuvchi {id, role, name, login, group_id, schoolId, status}
+  let mySchool = null; // joriy o'quv markaz {id, name, region, district, ownerId}
+  const SC = () => ['schoolId', '==', me.schoolId]; // har bir so'rov faqat o'z markazi ma'lumotini oladi
+  const pub = (u) => ({ id: u.id, role: u.role, name: u.name, login: u.login, group_id: u.group_id ?? null, must_change: false, status: u.status || 'active', owner: !!mySchool && mySchool.ownerId === u.id, school: mySchool ? { id: mySchool.id, name: mySchool.name, region: mySchool.region, district: mySchool.district } : null });
 
   // ---------- savollar (sayt bilan birga turgan questions.json) ----------
   let qcache = null;
@@ -56,19 +58,19 @@ export function createCore({ store, auth, exam }) {
 
   // ---------- yordamchilar ----------
   async function studentsOf(groupId) {
-    const all = await store.query('users', [['role', '==', 'student']]);
+    const all = await store.query('users', [SC(), ['role', '==', 'student'], ['status', '==', 'active']]);
     return all.filter((s) => (groupId == null ? true : String(s.group_id) === String(groupId))).sort(byName);
   }
   async function studentIdsOf(gid) { return (await studentsOf(gid)).map((s) => s.id); }
   async function studentOrSelf(id) {
     if (me.role === 'student') return me.id;
     const s = await store.get('users', String(id));
-    if (!s || s.role !== 'student') throw new HttpError(404, "O'quvchi topilmadi");
+    if (!s || s.role !== 'student' || s.schoolId !== me.schoolId) throw new HttpError(404, "O'quvchi topilmadi");
     return String(id);
   }
   async function byStudentIds(col, ids, extra = []) {
     if (!ids.length) return [];
-    return store.query(col, [['student_id', 'in', ids], ...extra]);
+    return store.query(col, [SC(), ['student_id', 'in', ids], ...extra]);
   }
   function topicAgg(statsDocs) { // statsDocs: [{id, topics}]
     const byStudent = {}; const byTopic = {};
@@ -88,7 +90,7 @@ export function createCore({ store, auth, exam }) {
   }
   async function wipeStudentData(id) {
     for (const col of ['attendance', 'grades', 'payments', 'attempts']) {
-      const rows = await store.query(col, [['student_id', '==', id]]);
+      const rows = await store.query(col, [SC(), ['student_id', '==', id]]);
       if (rows.length) await store.batch(rows.map((r) => ({ op: 'del', col, id: r.id })));
     }
     await store.batch([{ op: 'del', col: 'stats', id }, { op: 'del', col: 'credentials', id }, { op: 'del', col: 'users', id }]);
@@ -107,11 +109,11 @@ export function createCore({ store, auth, exam }) {
   });
 
   route('GET', '/api/groups', T, async () => {
-    const [groups, students] = await Promise.all([store.query('groups', []), studentsOf(null)]);
+    const [groups, students] = await Promise.all([store.query('groups', [SC()]), studentsOf(null)]);
     return groups.map((g) => ({ ...g, students: students.filter((s) => String(s.group_id) === String(g.id)).length })).sort((a, b) => (b.created || '').localeCompare(a.created || ''));
   });
   route('POST', '/api/groups', T, async (c) => {
-    const id = await store.add('groups', { name: needStr(c.body.name, 'Guruh nomi', 80), price: needInt(c.body.price || 0, 'Narx', 0, 1e10), start_date: c.body.start_date || null, created: nowIso() });
+    const id = await store.add('groups', { name: needStr(c.body.name, 'Guruh nomi', 80), price: needInt(c.body.price || 0, 'Narx', 0, 1e10), start_date: c.body.start_date || null, schoolId: me.schoolId, created: nowIso() });
     return { id };
   });
   route('PUT', '/api/groups/:id', T, async (c) => { await store.update('groups', c.params.id, { name: needStr(c.body.name, 'Guruh nomi', 80), price: needInt(c.body.price || 0, 'Narx', 0, 1e10) }); return { ok: true }; });
@@ -124,7 +126,7 @@ export function createCore({ store, auth, exam }) {
   route('GET', '/api/students', T, async (c) => (await studentsOf(G(c) || null)).map((s) => ({ id: s.id, name: s.name, login: s.login, phone: s.phone || null, group_id: s.group_id })));
   route('POST', '/api/students', T, async (c) => {
     const name = needStr(c.body.name, 'Ism', 100); const gid = needStr(String(c.body.group_id || ''), 'Guruh', 60);
-    if (!(await store.get('groups', gid))) throw bad('Guruh topilmadi');
+    const grp = await store.get('groups', gid); if (!grp || grp.schoolId !== me.schoolId) throw bad('Guruh topilmadi');
     const password = randomPassword(); let login; let uid;
     for (let i = 0; i < 6; i++) {
       login = slugLogin(name);
@@ -132,8 +134,8 @@ export function createCore({ store, auth, exam }) {
     }
     if (!uid) throw bad('Login yaratib bo\'lmadi, qayta urinib ko\'ring');
     await store.batch([
-      { op: 'set', col: 'users', id: uid, data: { role: 'student', name, login, group_id: gid, phone: c.body.phone ? String(c.body.phone).slice(0, 30) : null, created: nowIso() } },
-      { op: 'set', col: 'credentials', id: uid, data: { login, password } },
+      { op: 'set', col: 'users', id: uid, data: { role: 'student', status: 'active', schoolId: me.schoolId, name, login, group_id: gid, phone: c.body.phone ? String(c.body.phone).slice(0, 30) : null, created: nowIso() } },
+      { op: 'set', col: 'credentials', id: uid, data: { login, password, schoolId: me.schoolId } },
     ]);
     return { id: uid, login, password };
   });
@@ -141,7 +143,7 @@ export function createCore({ store, auth, exam }) {
     const id = await studentOrSelf(c.params.id); const cred = await store.get('credentials', id);
     if (!cred) throw bad("Bu o'quvchining eski paroli saqlanmagan, parolni yangilab bo'lmaydi");
     const password = randomPassword(); await auth.setPassword(cred.login, cred.password, password);
-    await store.set('credentials', id, { login: cred.login, password }); return { login: cred.login, password };
+    await store.set('credentials', id, { login: cred.login, password, schoolId: me.schoolId }); return { login: cred.login, password };
   });
   route('PUT', '/api/students/:id', T, async (c) => {
     const id = await studentOrSelf(c.params.id);
@@ -153,16 +155,36 @@ export function createCore({ store, auth, exam }) {
     await wipeStudentData(id); return { ok: true };
   });
 
+  // yangi ro'yxatdan o'tganlarni tasdiqlash
+  route('GET', '/api/requests', T, async () => {
+    const rows = await store.query('users', [SC(), ['status', '==', 'pending']]);
+    const owner = mySchool.ownerId === me.id;
+    return rows.filter((u) => owner || u.role === 'student').map((u) => ({ id: u.id, name: u.name, login: u.login, role: u.role, created: u.created || '' })).sort((a, b) => b.created.localeCompare(a.created));
+  });
+  route('POST', '/api/requests/:id/approve', T, async (c) => {
+    const id = String(c.params.id); const u = await store.get('users', id);
+    if (!u || u.schoolId !== me.schoolId || u.status !== 'pending') throw new HttpError(404, "So'rov topilmadi");
+    if (u.role === 'teacher') { if (mySchool.ownerId !== me.id) throw new HttpError(403, "O'qituvchini faqat markaz rahbari tasdiqlaydi"); await store.update('users', id, { status: 'active' }); return { ok: true }; }
+    const gid = needStr(String(c.body.group_id || ''), 'Guruh', 60); const g = await store.get('groups', gid); if (!g || g.schoolId !== me.schoolId) throw bad('Guruh topilmadi');
+    await store.update('users', id, { status: 'active', group_id: gid }); return { ok: true };
+  });
+  route('DELETE', '/api/requests/:id', T, async (c) => {
+    const id = String(c.params.id); const u = await store.get('users', id);
+    if (!u || u.schoolId !== me.schoolId || u.status !== 'pending') throw new HttpError(404, "So'rov topilmadi");
+    if (u.role === 'teacher' && mySchool.ownerId !== me.id) throw new HttpError(403, "Faqat markaz rahbari rad etadi");
+    await store.batch([{ op: 'del', col: 'credentials', id }, { op: 'del', col: 'users', id }]); return { ok: true };
+  });
+
   // davomat
   route('GET', '/api/attendance', T, async (c) => {
     const date = needDate(c.query.date); const ids = await studentsOf(needStr(String(G(c) || ''), 'Guruh', 60));
-    const docs = await store.query('attendance', [['date', '==', date]]); const m = Object.fromEntries(docs.map((d) => [d.student_id, d.status]));
+    const docs = await store.query('attendance', [SC(), ['date', '==', date]]); const m = Object.fromEntries(docs.map((d) => [d.student_id, d.status]));
     return ids.map((s) => ({ id: s.id, name: s.name, status: m[s.id] || null }));
   });
   route('POST', '/api/attendance', T, async (c) => {
     const date = needDate(c.body.date); if (!Array.isArray(c.body.records)) throw bad('records kerak');
     const ok = ['present', 'absent', 'late', 'excused']; const ops = [];
-    for (const r of c.body.records) { if (!ok.includes(r.status)) continue; ops.push({ op: 'set', col: 'attendance', id: `${r.student_id}_${date}`, data: { student_id: String(r.student_id), date, status: r.status } }); }
+    for (const r of c.body.records) { if (!ok.includes(r.status)) continue; ops.push({ op: 'set', col: 'attendance', id: `${r.student_id}_${date}`, data: { student_id: String(r.student_id), date, status: r.status, schoolId: me.schoolId } }); }
     if (ops.length) await store.batch(ops); return { ok: true };
   });
   route('GET', '/api/attendance/summary', ANY, async (c) => {
@@ -177,28 +199,28 @@ export function createCore({ store, auth, exam }) {
   // baholar
   route('GET', '/api/grades', ANY, async (c) => {
     const sort = (a) => a.sort((x, y) => (y.date || '').localeCompare(x.date || '') || (y.created || '').localeCompare(x.created || ''));
-    if (me.role === 'student') return sort(await store.query('grades', [['student_id', '==', me.id]]));
-    if (c.query.student) return sort(await store.query('grades', [['student_id', '==', String(c.query.student)]]));
+    if (me.role === 'student') return sort(await store.query('grades', [SC(), ['student_id', '==', me.id]]));
+    if (c.query.student) return sort(await store.query('grades', [SC(), ['student_id', '==', String(c.query.student)]]));
     const studs = await studentsOf(needStr(String(G(c) || ''), 'Guruh', 60)); const names = Object.fromEntries(studs.map((s) => [s.id, s.name]));
     return sort(await byStudentIds('grades', studs.map((s) => s.id))).slice(0, 300).map((g) => ({ ...g, name: names[g.student_id] }));
   });
   route('POST', '/api/grades', T, async (c) => {
     const sid = await studentOrSelf(c.body.student_id);
-    await store.add('grades', { student_id: sid, date: needDate(c.body.date || today()), kind: needStr(c.body.kind, 'Tur', 30), score: needInt(c.body.score, 'Baho', 1, 5), note: c.body.note ? String(c.body.note).slice(0, 300) : null, created: nowIso() });
+    await store.add('grades', { schoolId: me.schoolId, student_id: sid, date: needDate(c.body.date || today()), kind: needStr(c.body.kind, 'Tur', 30), score: needInt(c.body.score, 'Baho', 1, 5), note: c.body.note ? String(c.body.note).slice(0, 300) : null, created: nowIso() });
     return { ok: true };
   });
   route('DELETE', '/api/grades/:id', T, async (c) => { await store.del('grades', c.params.id); return { ok: true }; });
 
   // to'lovlar (faqat o'qituvchi)
   route('GET', '/api/payments/summary', T, async (c) => {
-    const gid = needStr(String(G(c) || ''), 'Guruh', 60); const g = await store.get('groups', gid); if (!g) throw new HttpError(404, 'Guruh topilmadi');
+    const gid = needStr(String(G(c) || ''), 'Guruh', 60); const g = await store.get('groups', gid); if (!g || g.schoolId !== me.schoolId) throw new HttpError(404, 'Guruh topilmadi');
     const studs = await studentsOf(gid); const pays = await byStudentIds('payments', studs.map((s) => s.id));
     return { price: g.price || 0, students: studs.map((s) => { const paid = pays.filter((p) => p.student_id === s.id).reduce((a, p) => a + p.amount, 0); return { id: s.id, name: s.name, phone: s.phone || null, paid, debt: Math.max(0, (g.price || 0) - paid) }; }) };
   });
-  route('GET', '/api/payments', T, async (c) => (await store.query('payments', [['student_id', '==', String(c.query.student)]])).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.created || '').localeCompare(a.created || '')));
+  route('GET', '/api/payments', T, async (c) => (await store.query('payments', [SC(), ['student_id', '==', String(c.query.student)]])).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.created || '').localeCompare(a.created || '')));
   route('POST', '/api/payments', T, async (c) => {
     const sid = await studentOrSelf(c.body.student_id);
-    await store.add('payments', { student_id: sid, date: needDate(c.body.date || today()), amount: needInt(c.body.amount, 'Summa', 1, 1e10), note: c.body.note ? String(c.body.note).slice(0, 200) : null, created: nowIso() });
+    await store.add('payments', { schoolId: me.schoolId, student_id: sid, date: needDate(c.body.date || today()), amount: needInt(c.body.amount, 'Summa', 1, 1e10), note: c.body.note ? String(c.body.note).slice(0, 200) : null, created: nowIso() });
     return { ok: true };
   });
   route('DELETE', '/api/payments/:id', T, async (c) => { await store.del('payments', c.params.id); return { ok: true }; });
@@ -213,7 +235,7 @@ export function createCore({ store, auth, exam }) {
   route('GET', '/api/analytics/student', ANY, async (c) => {
     const id = await studentOrSelf(c.query.student);
     const stats = (await store.get('stats', id)) || {}; const a = topicAgg([{ id, ...stats }]);
-    const attempts = (await store.query('attempts', [['student_id', '==', id]])).sort((x, y) => y.started - x.started).slice(0, 20);
+    const attempts = (await store.query('attempts', [SC(), ['student_id', '==', id]])).sort((x, y) => y.started - x.started).slice(0, 20);
     return { topics: a.byStudent[id] || {}, attempts, weakPct: WEAK_PCT, minAnswers: WEAK_MIN };
   });
 
@@ -252,36 +274,73 @@ export function createCore({ store, auth, exam }) {
     }
     const total = at.picked.length; const errors = total - correct;
     const passed = at.mode === 'exam' ? errors <= exam.maxErrors && !late : null;
-    await store.set('stats', me.id, { topics });
-    await store.add('attempts', { student_id: me.id, mode: at.mode, topic: at.topic, started: at.started, finished: Date.now(), total, correct, passed, late });
+    await store.set('stats', me.id, { topics, schoolId: me.schoolId });
+    await store.add('attempts', { schoolId: me.schoolId, student_id: me.id, mode: at.mode, topic: at.topic, started: at.started, finished: Date.now(), total, correct, passed, late });
     return { total, correct, errors, passed, late, details };
   });
 
   // ---------- tashqi interfeys ----------
   async function loadMe(uid) {
     const u = await store.get('users', uid);
-    if (!u) { await auth.signOut(); throw new HttpError(401, "Hisob topilmadi (o'qituvchi o'chirgan bo'lishi mumkin)"); }
-    me = { id: uid, ...u }; return me;
+    if (!u) { await auth.signOut(); throw new HttpError(401, "Hisob topilmadi (markaz rahbari rad etgan yoki o'chirgan bo'lishi mumkin)"); }
+    me = { id: uid, ...u };
+    const sch = u.schoolId ? await store.get('schools', u.schoolId) : null;
+    if (!sch) { await auth.signOut(); me = null; throw new HttpError(401, "O'quv markaz topilmadi"); }
+    mySchool = { id: u.schoolId, ...sch };
+    return me;
+  }
+  const rid = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => b.toString(16).padStart(2, '0')).join('');
+  async function createWithLogin(name, password) {
+    for (let i = 0; i < 8; i++) {
+      const login = slugLogin(name);
+      try { return { login, uid: await auth.createAndSignIn(login, password) }; } catch (e) { if (e.code !== 'exists') throw e; }
+    }
+    throw bad("Login yaratib bo'lmadi, qayta urinib ko'ring");
   }
   return {
     exam,
-    async needsSetup() { return !(await store.get('meta', 'init')); },
-    async setupFirstTeacher({ name, login, password }) {
-      name = needStr(name, 'Ism', 100); login = normLogin(login);
+    // ro'yxatdan o'tish oynasi uchun: tanlangan hudud bo'yicha o'quv markazlar (kirmasdan ham ko'rinadi)
+    async listSchools(region, district) {
+      const rows = await store.query('schools', [['region', '==', String(region)], ['district', '==', String(district)]]);
+      return rows.map((r) => ({ id: r.id, name: r.name })).sort(byName);
+    },
+    // yangi o'quv markaz + uning rahbari (o'qituvchi) hisobi
+    async registerSchool({ region, district, schoolName, name, login, password }) {
+      region = needStr(region, 'Viloyat', 80); district = needStr(district, 'Tuman', 80); schoolName = needStr(schoolName, "O'quv markaz nomi", 120);
+      name = needStr(name, 'Ism familiya', 100); login = normLogin(login);
       if (String(password || '').length < 6) throw bad("Parol kamida 6 belgi bo'lsin");
       const uid = await auth.createAndSignIn(login, password);
+      const sid = rid();
       try {
-        await store.batch([{ op: 'set', col: 'users', id: uid, data: { role: 'teacher', name, login, group_id: null, phone: null, created: nowIso() } }, { op: 'set', col: 'meta', id: 'init', data: { created: nowIso() } }]);
-      } catch (e) { await auth.signOut().catch(() => {}); throw new HttpError(403, "Boshlang'ich o'qituvchi allaqachon yaratilgan yoki Firestore qoidalari qo'yilmagan: " + (e.message || e)); }
+        await store.batch([
+          { op: 'set', col: 'schools', id: sid, data: { name: schoolName, region, district, ownerId: uid, created: nowIso() } },
+          { op: 'set', col: 'users', id: uid, data: { role: 'teacher', status: 'active', schoolId: sid, name, login, group_id: null, phone: null, created: nowIso() } },
+        ]);
+      } catch (e) { await auth.signOut().catch(() => {}); throw new HttpError(403, "Markazni yaratib bo'lmadi. Firestore qoidalari (firestore.rules) qo'yilganini tekshiring: " + (e.message || e)); }
       await loadMe(uid); return { user: pub(me), exam };
+    },
+    // mavjud markazga qo'shilish: login va parol shu zahoti beriladi, kirish esa rahbar tasdiqlagach ochiladi
+    async joinSchool({ schoolId, firstName, lastName, role }) {
+      firstName = needStr(firstName, 'Ism', 50); lastName = needStr(lastName, 'Familiya', 50);
+      if (!['student', 'teacher'].includes(role)) throw bad('Rolni tanlang');
+      const sch = await store.get('schools', String(schoolId || '')); if (!sch) throw bad("O'quv markaz topilmadi");
+      const name = `${firstName} ${lastName}`; const password = randomPassword();
+      const { login, uid } = await createWithLogin(firstName, password);
+      const ops = [{ op: 'set', col: 'users', id: uid, data: { role, status: 'pending', schoolId, name, login, group_id: null, phone: null, created: nowIso() } }];
+      if (role === 'student') ops.push({ op: 'set', col: 'credentials', id: uid, data: { login, password, schoolId } });
+      try { await store.batch(ops); } catch (e) { await auth.signOut().catch(() => {}); throw new HttpError(403, "Ro'yxatdan o'tib bo'lmadi. Firestore qoidalarini tekshiring: " + (e.message || e)); }
+      await auth.signOut().catch(() => {});
+      return { login, password, name, role, school: sch.name };
     },
     async login(login, password) { const uid = await auth.signIn(normLogin(login), String(password || '')); await loadMe(uid); return { user: pub(me), exam }; },
     async restore() { const uid = await auth.restore(); if (!uid) return null; try { await loadMe(uid); return pub(me); } catch { return null; } },
-    async logout() { me = null; await auth.signOut(); },
+    async refreshMe() { if (!me) return null; await loadMe(me.id); return pub(me); },
+    async logout() { me = null; mySchool = null; await auth.signOut(); },
     async api(path, method = 'GET', body) {
       const [p, qs] = path.split('?'); const query = Object.fromEntries(new URLSearchParams(qs || ''));
       const r = routes.find((x) => x.method === method && x.re.test(p)); if (!r) throw new HttpError(404, 'Topilmadi');
       if (!me) throw new HttpError(401, 'Qayta kiring');
+      if (me.status === 'pending') throw new HttpError(403, 'Hisobingiz hali tasdiqlanmagan');
       if (!r.roles.includes(me.role)) throw new HttpError(403, "Ruxsat yo'q");
       return r.handler({ params: r.re.exec(p).groups || {}, query, body: body || {} });
     },

@@ -3,50 +3,120 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    function userDoc(uid) { return /databases/$(database)/documents/users/$(uid); }
-    function isTeacher() {
-      return signedIn() && exists(userDoc(request.auth.uid)) && get(userDoc(request.auth.uid)).data.role == 'teacher';
-    }
-    function isSelf(studentId) { return signedIn() && studentId == request.auth.uid; }
+    function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function schoolPath(id) { return /databases/$(database)/documents/schools/$(id); }
+    function myUser() { return get(userPath(request.auth.uid)).data; }
+    function hasUser() { return signedIn() && exists(userPath(request.auth.uid)); }
 
-    // Birinchi o'qituvchi yaratilganini bildiruvchi belgi (hamma o'qiy oladi, faqat bir marta yoziladi)
-    match /meta/{id} {
+    function isActiveTeacher() { return hasUser() && myUser().role == 'teacher' && myUser().status == 'active'; }
+    function isActiveUser() { return hasUser() && myUser().status == 'active'; }
+
+    // Tasdiqlangan o'qituvchi, aynan shu o'quv markazda
+    function isTeacherOf(sid) {
+      return hasUser() && myUser().role == 'teacher' && myUser().status == 'active' && myUser().schoolId == sid;
+    }
+    // Tasdiqlangan a'zo (o'qituvchi yoki o'quvchi), shu markazda
+    function isMemberOf(sid) {
+      return hasUser() && myUser().status == 'active' && myUser().schoolId == sid;
+    }
+    function isOwnerOf(sid) {
+      return signedIn() && exists(schoolPath(sid)) && get(schoolPath(sid)).data.ownerId == request.auth.uid;
+    }
+
+    // O'quv markazlar: ro'yxatdan o'tish oynasida hamma ko'ra oladi (nomi, viloyat, tuman)
+    match /schools/{id} {
       allow read: if true;
-      allow create: if signedIn() && id == 'init'
-        && !exists(/databases/$(database)/documents/meta/init)
-        && getAfter(userDoc(request.auth.uid)).data.role == 'teacher';
-      allow update, delete: if false;
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid && !exists(schoolPath(id));
+      allow update: if signedIn() && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if false;
     }
 
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
-      // o'quvchini faqat o'qituvchi yaratadi; birinchi o'qituvchini esa meta/init yo'q paytdagina o'zi yaratadi
-      allow create: if isTeacher()
-        || (request.auth.uid == uid && request.resource.data.role == 'teacher'
-            && !exists(/databases/$(database)/documents/meta/init));
-      allow update, delete: if isTeacher();
+      allow read: if signedIn() && (request.auth.uid == uid
+        || (resource == null ? isActiveTeacher() : isTeacherOf(resource.data.schoolId)));
+
+      allow create:
+        // 1) tasdiqlangan o'qituvchi o'quvchi yaratadi
+        if (isTeacherOf(request.resource.data.schoolId)
+              && request.resource.data.role == 'student'
+              && request.resource.data.status == 'active')
+        // 2) mavjud markazga qo'shilish: faqat "kutilmoqda" holatida
+        || (request.auth.uid == uid
+              && request.resource.data.role in ['student', 'teacher']
+              && request.resource.data.status == 'pending'
+              && exists(schoolPath(request.resource.data.schoolId)))
+        // 3) yangi markaz rahbari: markaz hozir shu so'rov bilan yaratilyapti
+        || (request.auth.uid == uid
+              && request.resource.data.role == 'teacher'
+              && request.resource.data.status == 'active'
+              && !exists(schoolPath(request.resource.data.schoolId))
+              && getAfter(schoolPath(request.resource.data.schoolId)).data.ownerId == request.auth.uid);
+
+      // tasdiqlash/guruh o'zgartirish: o'qituvchi (o'qituvchini faqat rahbar)
+      allow update: if isTeacherOf(resource.data.schoolId)
+        && request.resource.data.schoolId == resource.data.schoolId
+        && request.resource.data.role == resource.data.role
+        && (resource.data.role != 'teacher' || isOwnerOf(resource.data.schoolId));
+
+      allow delete: if isTeacherOf(resource.data.schoolId)
+        && (resource.data.role != 'teacher' || isOwnerOf(resource.data.schoolId));
     }
 
-    match /credentials/{uid} { allow read, write: if isTeacher(); }
-    match /groups/{id}      { allow read: if signedIn(); allow write: if isTeacher(); }
-    match /payments/{id}    { allow read, write: if isTeacher(); }
+    // O'quvchi parollari (faqat o'qituvchi o'qiydi). Yangi o'quvchi ro'yxatdan o'tganda o'zi bir marta yozadi.
+    match /credentials/{uid} {
+      allow read, delete: if resource == null ? isActiveTeacher() : isTeacherOf(resource.data.schoolId);
+      allow update: if isTeacherOf(resource.data.schoolId);
+      allow create: if isTeacherOf(request.resource.data.schoolId)
+        || (signedIn() && request.auth.uid == uid
+            && getAfter(userPath(uid)).data.role == 'student'
+            && getAfter(userPath(uid)).data.status == 'pending'
+            && request.resource.data.schoolId == getAfter(userPath(uid)).data.schoolId);
+    }
+
+    match /groups/{id} {
+      allow read: if resource == null ? isActiveUser() : isMemberOf(resource.data.schoolId);
+      allow create: if isTeacherOf(request.resource.data.schoolId);
+      allow update: if isTeacherOf(resource.data.schoolId) && request.resource.data.schoolId == resource.data.schoolId;
+      allow delete: if isTeacherOf(resource.data.schoolId);
+    }
+
+    match /payments/{id} {
+      allow read: if isTeacherOf(resource.data.schoolId);
+      allow create: if isTeacherOf(request.resource.data.schoolId);
+      allow update: if isTeacherOf(resource.data.schoolId) && request.resource.data.schoolId == resource.data.schoolId;
+      allow delete: if isTeacherOf(resource.data.schoolId);
+    }
 
     match /attendance/{id} {
-      allow read: if isTeacher() || (signedIn() && resource.data.student_id == request.auth.uid);
-      allow write: if isTeacher();
+      allow read: if isTeacherOf(resource.data.schoolId)
+        || (isMemberOf(resource.data.schoolId) && resource.data.student_id == request.auth.uid);
+      allow create: if isTeacherOf(request.resource.data.schoolId);
+      allow update: if isTeacherOf(resource.data.schoolId) && request.resource.data.schoolId == resource.data.schoolId;
+      allow delete: if isTeacherOf(resource.data.schoolId);
     }
+
     match /grades/{id} {
-      allow read: if isTeacher() || (signedIn() && resource.data.student_id == request.auth.uid);
-      allow write: if isTeacher();
+      allow read: if isTeacherOf(resource.data.schoolId)
+        || (isMemberOf(resource.data.schoolId) && resource.data.student_id == request.auth.uid);
+      allow create: if isTeacherOf(request.resource.data.schoolId);
+      allow update: if isTeacherOf(resource.data.schoolId) && request.resource.data.schoolId == resource.data.schoolId;
+      allow delete: if isTeacherOf(resource.data.schoolId);
     }
+
     match /attempts/{id} {
-      allow read: if isTeacher() || (signedIn() && resource.data.student_id == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.student_id == request.auth.uid;
-      allow update, delete: if isTeacher();
+      allow read: if isTeacherOf(resource.data.schoolId)
+        || (isMemberOf(resource.data.schoolId) && resource.data.student_id == request.auth.uid);
+      allow create: if isMemberOf(request.resource.data.schoolId) && request.resource.data.student_id == request.auth.uid;
+      allow update, delete: if isTeacherOf(resource.data.schoolId);
     }
+
     match /stats/{uid} {
-      allow read: if isTeacher() || isSelf(uid);
-      allow write: if isTeacher() || isSelf(uid);
+      allow read: if resource == null ? isActiveUser()
+        : (isTeacherOf(resource.data.schoolId) || (isMemberOf(resource.data.schoolId) && uid == request.auth.uid));
+      allow create, update: if (isMemberOf(request.resource.data.schoolId) && uid == request.auth.uid)
+        || isTeacherOf(request.resource.data.schoolId);
+      allow delete: if resource == null ? isActiveTeacher() : isTeacherOf(resource.data.schoolId);
     }
   }
 }

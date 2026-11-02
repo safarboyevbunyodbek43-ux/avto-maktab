@@ -34,6 +34,7 @@
       topicTestIntro: "Mavzuni tanlang va 10 ta savolga javob bering. Natija zaif mavzularni aniqlaydi.", examIntro: "Haqiqiy imtihon tartibi: savollar barcha mavzulardan aralash, vaqt cheklangan.", examRules: '{n} ta savol, {m} daqiqa, ko\'pi bilan {e} ta xato mumkin.', practiceWeak: 'Mashq qilish',
       myGrades: 'Baholarim', myAttendance: 'Davomatim', lastAttempts: "So'nggi urinishlar", mode_topic: 'Mavzu testi', mode_exam: 'Imtihon', noWeak: "Hozircha chala mavzu yo'q. Testlarni davom ettiring.",
       oldPw: 'Eski parol', newPw: 'Yangi parol (kamida 6 belgi)', changePw: "Parolni o'zgartirish", pwChanged: "Parol o'zgartirildi", mustChange: "Xavfsizlik uchun avval parolni o'zgartiring.",
+      register: "Ro'yxatdan o'tish", regSchool: "Yangi o'quv markazni ro'yxatdan o'tkazish", regJoin: "Mavjud o'quv markazga qo'shilish", region: 'Viloyat', district: 'Tuman', pickRegion: 'Viloyatni tanlang', pickDistrict: 'Tumanni tanlang', school: "O'quv markaz", schoolName: "O'quv markaz nomi", pickSchool: "O'quv markazni tanlang", noSchools: "Bu tumanda hali o'quv markaz ro'yxatdan o'tmagan. Markaz rahbari avval «Yangi o'quv markazni ro'yxatdan o'tkazish» orqali o'z markazini qo'shishi kerak.", firstName: 'Ism', lastName: 'Familiya', roleQ: "Siz kim bo'lib ishlaysiz?", regDone: "Ro'yxatdan o'tdingiz", regDoneNote: "Login va parolni yozib qo'ying: parol faqat hozir ko'rinadi. Markaz rahbari tasdiqlagach shu login va parol bilan kira olasiz.", toLogin: "Kirishga o'tish", haveAccount: 'Hisobingiz bormi? Kirish', noAccount: "Hisobingiz yo'qmi?", regTeacherNote: "O'qituvchi sifatida qo'shilishni faqat markaz rahbari tasdiqlaydi. Parolni yo'qotsangiz, tiklab bo'lmaydi.", regOwnerNote: "Siz markaz rahbari (birinchi o'qituvchi) bo'lasiz. Keyin o'qituvchi va o'quvchilarni tasdiqlaysiz.", pendingTitle: 'Tasdiqlash kutilmoqda', pendingNote: "Hisobingizni o'quv markaz rahbari tasdiqlagach ilovadan foydalana olasiz. Keyinroq qayta kiring yoki «Tekshirish» tugmasini bosing.", check: 'Tekshirish', stillPending: 'Hali tasdiqlanmagan', nav_requests: "So'rovlar", requestsTitle: "Ro'yxatdan o'tish so'rovlari", noRequests: "Yangi so'rov yo'q.", approve: 'Tasdiqlash', reject: 'Rad etish', approved: 'Tasdiqlandi', ownerBadge: 'rahbar',
       language: 'Til', langs: { uz: "O'zbekcha (lotin)", uzc: 'Ўзбекча (кирилл)', ru: 'Русский', en: 'English' }, loading: 'Yuklanmoqda...', error: 'Xatolik', hello: 'Salom', pct: '%',
     },
     ru: {
@@ -56,6 +57,7 @@
       topicTestIntro: 'Выберите тему и ответьте на 10 вопросов. Результат покажет слабые темы.', examIntro: 'Как на настоящем экзамене: вопросы из всех тем вперемешку, время ограничено.', examRules: '{n} вопросов, {m} минут, допустимо не более {e} ошибок.', practiceWeak: 'Тренироваться',
       myGrades: 'Мои оценки', myAttendance: 'Моя посещаемость', lastAttempts: 'Последние попытки', mode_topic: 'Тест по теме', mode_exam: 'Экзамен', noWeak: 'Слабых тем пока нет. Продолжайте тесты.',
       oldPw: 'Старый пароль', newPw: 'Новый пароль (минимум 6 символов)', changePw: 'Сменить пароль', pwChanged: 'Пароль изменён', mustChange: 'Для безопасности сначала смените пароль.',
+      register: 'Регистрация', regSchool: 'Зарегистрировать новый учебный центр', regJoin: 'Присоединиться к учебному центру', region: 'Область', district: 'Район', pickRegion: 'Выберите область', pickDistrict: 'Выберите район', school: 'Учебный центр', schoolName: 'Название учебного центра', pickSchool: 'Выберите учебный центр', noSchools: 'В этом районе пока нет учебных центров. Руководитель центра сначала должен зарегистрировать его через «Зарегистрировать новый учебный центр».', firstName: 'Имя', lastName: 'Фамилия', roleQ: 'В какой роли вы работаете?', regDone: 'Вы зарегистрированы', regDoneNote: 'Запишите логин и пароль: пароль виден только сейчас. После подтверждения руководителем центра вы войдёте с этими данными.', toLogin: 'Перейти ко входу', haveAccount: 'Уже есть аккаунт? Войти', noAccount: 'Нет аккаунта?', regTeacherNote: 'Присоединение преподавателя подтверждает только руководитель центра. Утерянный пароль восстановить нельзя.', regOwnerNote: 'Вы станете руководителем центра (первым преподавателем). Потом вы будете подтверждать преподавателей и учеников.', pendingTitle: 'Ожидает подтверждения', pendingNote: 'Вы сможете пользоваться приложением после подтверждения руководителем центра. Зайдите позже или нажмите «Проверить».', check: 'Проверить', stillPending: 'Пока не подтверждено', nav_requests: 'Заявки', requestsTitle: 'Заявки на регистрацию', noRequests: 'Новых заявок нет.', approve: 'Подтвердить', reject: 'Отклонить', approved: 'Подтверждено', ownerBadge: 'руководитель',
       language: 'Язык', langs: { uz: "O'zbekcha (lotin)", uzc: 'Ўзбекча (кирилл)', ru: 'Русский', en: 'English' }, loading: 'Загрузка...', error: 'Ошибка', hello: 'Здравствуйте', pct: '%',
     },
     en: {
@@ -78,6 +80,7 @@
       topicTestIntro: 'Choose a topic and answer 10 questions. The result shows your weak topics.', examIntro: 'Like the real exam: questions from all topics mixed, with a time limit.', examRules: '{n} questions, {m} minutes, at most {e} errors allowed.', practiceWeak: 'Practice',
       myGrades: 'My grades', myAttendance: 'My attendance', lastAttempts: 'Recent attempts', mode_topic: 'Topic test', mode_exam: 'Exam', noWeak: 'No weak topics yet. Keep taking tests.',
       oldPw: 'Old password', newPw: 'New password (at least 6 characters)', changePw: 'Change password', pwChanged: 'Password changed', mustChange: 'For security, change your password first.',
+      register: 'Sign up', regSchool: 'Register a new driving school', regJoin: 'Join an existing driving school', region: 'Region', district: 'District', pickRegion: 'Choose a region', pickDistrict: 'Choose a district', school: 'Driving school', schoolName: 'School name', pickSchool: 'Choose a school', noSchools: 'No school is registered in this district yet. The school head must first add it with “Register a new driving school”.', firstName: 'First name', lastName: 'Last name', roleQ: 'What is your role?', regDone: 'You are registered', regDoneNote: 'Write down the login and password: the password is shown only now. Once the school head approves you, sign in with them.', toLogin: 'Go to sign in', haveAccount: 'Have an account? Sign in', noAccount: 'No account?', regTeacherNote: 'Only the school head can approve a teacher. A lost password cannot be recovered.', regOwnerNote: 'You will be the school head (first teacher). Later you approve teachers and students.', pendingTitle: 'Waiting for approval', pendingNote: 'You can use the app after the school head approves you. Come back later or press “Check”.', check: 'Check', stillPending: 'Not approved yet', nav_requests: 'Requests', requestsTitle: 'Sign-up requests', noRequests: 'No new requests.', approve: 'Approve', reject: 'Reject', approved: 'Approved', ownerBadge: 'head',
       language: 'Language', langs: { uz: "O'zbekcha (lotin)", uzc: 'Ўзбекча (кирилл)', ru: 'Русский', en: 'English' }, loading: 'Loading...', error: 'Error', hello: 'Hello', pct: '%',
     },
   };
@@ -163,14 +166,15 @@
     document.documentElement.lang = st.lang === 'uzc' ? 'uz-Cyrl' : st.lang;
     document.title = t('app');
     if (!st.booted) {
-      window.BACKEND.restore().then(async (u) => { st.user = u; st.exam = window.BACKEND.exam; st.needSetup = u ? false : await window.BACKEND.needsSetup(); st.booted = true; render(); })
+      window.BACKEND.restore().then(async (u) => { st.user = u; st.exam = window.BACKEND.exam; st.booted = true; render(); })
         .catch((e) => { st.booted = true; st.bootErr = e.message || String(e); render(); });
       return root.append(h('div', { class: 'wrap' }, spinner()));
     }
     if (st.bootErr) return root.append(h('div', { class: 'wrap' }, h('div', { class: 'card login' }, h('p', { class: 'chip bad' }, st.bootErr), h('p', { class: 'muted small' }, t('bootHelp')))));
-    if (!st.user) return root.append(st.needSetup ? setupView() : loginView());
+    if (!st.user) return root.append(st.screen === 'register' ? registerView() : loginView());
+    if (st.user.status === 'pending') return root.append(pendingView());
     const tabs = st.user.role === 'teacher'
-      ? ['groups', 'attendance', 'grades', 'analytics', 'payments', 'questions', 'samples', 'settings']
+      ? ['groups', 'requests', 'attendance', 'grades', 'analytics', 'payments', 'questions', 'samples', 'settings']
       : ['home', 'topic', 'exam', 'samples'];
     if (st.user.must_change) st.tab = 'settings';
     if (!st.tab || !tabs.includes(st.tab)) st.tab = tabs[0];
@@ -178,29 +182,87 @@
       ['uz', 'uzc', 'ru', 'en'].map((l) => h('option', { value: l, selected: l === st.lang }, S.uz.langs[l])));
     root.append(
       h('header', { class: 'top' }, h('div', { class: 'wrap' },
-        h('div', { class: 'brand' }, '🚗 ' + t('app'), h('small', null, t(st.user.role))),
+        h('div', { class: 'brand' }, '🚗 ' + t('app'), h('small', null, t(st.user.role) + (st.user.school ? ' · ' + st.user.school.name : ''))),
         h('div', { class: 'row' }, langSel, h('span', { class: 'muted' }, st.user.name), h('button', { class: 'btn ghost small', type: 'button', onclick: guard(async () => { await window.BACKEND.logout().catch(() => {}); logoutLocal(); }) }, t('logout'))))),
-      h('nav', { class: 'tabs' }, h('div', { class: 'wrap' }, tabs.map((k) => h('button', { type: 'button', 'aria-current': k === st.tab ? 'page' : null, onclick: () => { if (st.user.must_change) return toast(t('mustChange'), true); st.tab = k; render(); } }, t('nav_' + k))))),
+      h('nav', { class: 'tabs' }, h('div', { class: 'wrap' }, tabs.map((k) => h('button', { type: 'button', id: 'tab-' + k, 'aria-current': k === st.tab ? 'page' : null, onclick: () => { if (st.user.must_change) return toast(t('mustChange'), true); st.tab = k; render(); } }, t('nav_' + k))))),
       window.BACKEND.mode === 'demo' && h('div', { class: 'wrap', style: { paddingTop: '10px' } }, h('p', { class: 'chip warn', style: { margin: 0 } }, t('demoBanner'))),
       h('main', null, h('div', { class: 'wrap', id: 'view' })));
     const view = document.getElementById('view'); view.append(spinner());
+    refreshPending();
     Promise.resolve(VIEWS[st.tab](view)).catch((e) => { setView(view, h('p', { class: 'muted' }, t('error') + ': ' + e.message)); });
   }
-  function setupView() {
-    const name = h('input', { id: 'sname2', required: true }); const login = h('input', { id: 'slogin', autocapitalize: 'none', required: true, value: 'direktor' });
-    const pw = h('input', { id: 'spw', type: 'password', minlength: 6, required: true, autocomplete: 'new-password' });
+  async function refreshPending() {
+    if (!st.user || st.user.role !== 'teacher') return;
+    try { const r = await window.BACKEND.api('/api/requests'); const b = document.getElementById('tab-requests'); if (b) b.textContent = t('nav_requests') + (r.length ? ' (' + r.length + ')' : ''); } catch { /* */ }
+  }
+  const fieldOf = (id, label, input) => h('div', { class: 'field' }, h('label', { for: id }, label), input);
+  const rn = (x) => (st.lang === 'uzc' ? translit(x) : x);
+  // viloyat + tuman tanlash
+  function placePicker(onChange) {
+    const R = window.REGIONS || {};
+    const reg = h('select', { id: 'reg', required: true }, h('option', { value: '' }, t('pickRegion')), Object.keys(R).map((k) => h('option', { value: k }, rn(k))));
+    const dis = h('select', { id: 'dis', required: true, disabled: true }, h('option', { value: '' }, t('pickDistrict')));
+    reg.addEventListener('change', () => { dis.replaceChildren(h('option', { value: '' }, t('pickDistrict')), ...(R[reg.value] || []).map((d) => h('option', { value: d }, rn(d)))); dis.disabled = !reg.value; onChange && onChange(); });
+    dis.addEventListener('change', () => onChange && onChange());
+    return { reg, dis, nodes: [fieldOf('reg', t('region'), reg), fieldOf('dis', t('district'), dis)] };
+  }
+  function registerView() {
+    const toLogin = () => { st.screen = null; st.regMode = null; st.regDone = null; render(); };
+    const wrapCard = (...kids) => h('div', { class: 'wrap' }, h('div', { class: 'login' }, h('div', { class: 'card' }, h('h1', null, '🚗 ' + t('app')), ...kids)));
+    const backBtn = h('button', { class: 'btn ghost small', type: 'button', onclick: toLogin }, t('haveAccount'));
+    if (st.regDone) {
+      const d = st.regDone; const line = `${d.school}\n${d.name}\n${t('loginName')}: ${d.login}\n${t('password')}: ${d.password}`;
+      return wrapCard(h('h3', null, t('regDone')), h('p', null, d.name + ' · ' + t(d.role) + ' · ' + d.school),
+        h('div', { class: 'cred' }, h('p', null, t('loginName') + ': ', h('code', null, d.login)), h('p', null, t('password') + ': ', h('code', null, d.password))),
+        h('p', { class: 'small muted' }, t('regDoneNote')),
+        h('div', { class: 'row' }, h('button', { class: 'btn small', type: 'button', onclick: () => { (navigator.clipboard?.writeText(line) || Promise.reject()).then(() => toast(t('copied')), () => toast(line)); } }, t('copy')), h('button', { class: 'btn', type: 'button', onclick: toLogin }, t('toLogin'))));
+    }
+    if (!st.regMode) {
+      return wrapCard(h('h3', null, t('register')),
+        h('div', { class: 'row', style: { flexDirection: 'column', alignItems: 'stretch', gap: '10px' } },
+          h('button', { class: 'btn', type: 'button', onclick: () => { st.regMode = 'join'; render(); } }, t('regJoin')),
+          h('button', { class: 'btn ghost', type: 'button', onclick: () => { st.regMode = 'school'; render(); } }, t('regSchool'))), h('p', null, backBtn));
+    }
     const err = h('p', { class: 'chip bad', hidden: true });
-    const form = h('form', { class: 'card', onsubmit: async (e) => {
+    const fail = (x) => { err.textContent = x.message; err.hidden = false; };
+    const back2 = h('button', { class: 'btn ghost small', type: 'button', onclick: () => { st.regMode = null; render(); } }, '←');
+    if (st.regMode === 'school') {
+      const place = placePicker(); const sname = h('input', { id: 'rsn', required: true, maxlength: 120 }); const nm = h('input', { id: 'rnm', required: true });
+      const lg = h('input', { id: 'rlg', autocapitalize: 'none', required: true, autocomplete: 'username' }); const pw = h('input', { id: 'rpw', type: 'password', minlength: 6, required: true, autocomplete: 'new-password' });
+      const form = h('form', { onsubmit: async (e) => {
+        e.preventDefault(); err.hidden = true;
+        try { const d = await window.BACKEND.registerSchool({ region: place.reg.value, district: place.dis.value, schoolName: sname.value, name: nm.value, login: lg.value, password: pw.value }); st.user = d.user; st.exam = d.exam; st.screen = null; st.regMode = null; st.tab = null; render(); }
+        catch (x) { fail(x); }
+      } }, ...place.nodes, fieldOf('rsn', t('schoolName'), sname), fieldOf('rnm', t('name'), nm), fieldOf('rlg', t('loginName'), lg), fieldOf('rpw', t('newPw'), pw), h('p', { class: 'small muted' }, t('regOwnerNote')), err,
+      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, t('register')), back2));
+      return wrapCard(h('h3', null, t('regSchool')), form);
+    }
+    // mavjud markazga qo'shilish
+    const schoolSel = h('select', { id: 'rsch', required: true, disabled: true }, h('option', { value: '' }, t('pickSchool')));
+    const info = h('p', { class: 'chip warn', hidden: true });
+    const place = placePicker(async () => {
+      schoolSel.replaceChildren(h('option', { value: '' }, t('pickSchool'))); schoolSel.disabled = true; info.hidden = true;
+      if (!place.reg.value || !place.dis.value) return;
+      try { const list = await window.BACKEND.listSchools(place.reg.value, place.dis.value); list.forEach((x) => schoolSel.append(h('option', { value: x.id }, x.name))); schoolSel.disabled = !list.length; if (!list.length) { info.textContent = t('noSchools'); info.hidden = false; } }
+      catch (x) { fail(x); }
+    });
+    const fn = h('input', { id: 'rfn', required: true, maxlength: 50, autocomplete: 'given-name' }); const ln = h('input', { id: 'rln', required: true, maxlength: 50, autocomplete: 'family-name' });
+    const roleSel = h('select', { id: 'rrole' }, h('option', { value: 'student' }, t('student')), h('option', { value: 'teacher' }, t('teacher')));
+    const form = h('form', { onsubmit: async (e) => {
       e.preventDefault(); err.hidden = true;
-      try { const d = await window.BACKEND.setupFirstTeacher({ name: name.value, login: login.value, password: pw.value }); st.user = d.user; st.exam = d.exam; st.needSetup = false; st.tab = null; render(); }
-      catch (x) { err.textContent = x.message; err.hidden = false; }
-    } },
-    h('h1', null, '🚗 ' + t('app')), h('h3', null, t('setupTitle')), h('p', { class: 'muted small' }, t('setupNote')),
-    h('div', { class: 'field' }, h('label', { for: 'sname2' }, t('name')), name),
-    h('div', { class: 'field' }, h('label', { for: 'slogin' }, t('loginName')), login),
-    h('div', { class: 'field' }, h('label', { for: 'spw' }, t('newPw')), pw), err,
-    h('button', { class: 'btn', type: 'submit' }, t('save')));
-    return h('div', { class: 'wrap' }, h('div', { class: 'login' }, form));
+      try { const d = await window.BACKEND.joinSchool({ schoolId: schoolSel.value, firstName: fn.value, lastName: ln.value, role: roleSel.value }); st.regDone = d; render(); }
+      catch (x) { fail(x); }
+    } }, ...place.nodes, fieldOf('rsch', t('school'), schoolSel), info, fieldOf('rfn', t('firstName'), fn), fieldOf('rln', t('lastName'), ln), fieldOf('rrole', t('roleQ'), roleSel), h('p', { class: 'small muted' }, t('regTeacherNote')), err,
+    h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, t('register')), back2));
+    return wrapCard(h('h3', null, t('regJoin')), form);
+  }
+  function pendingView() {
+    const note = h('p', { class: 'chip warn', hidden: true }, t('stillPending'));
+    return h('div', { class: 'wrap' }, h('div', { class: 'login' }, h('div', { class: 'card' }, h('h1', null, '🚗 ' + t('app')), h('h3', null, t('pendingTitle')),
+      h('p', null, st.user.name + ' · ' + t(st.user.role) + (st.user.school ? ' · ' + st.user.school.name : '')), h('p', { class: 'muted' }, t('pendingNote')), note,
+      h('div', { class: 'row' },
+        h('button', { class: 'btn', type: 'button', onclick: guard(async () => { const u = await window.BACKEND.refreshMe(); if (u && u.status !== 'pending') { st.user = u; st.tab = null; render(); } else note.hidden = false; }) }, t('check')),
+        h('button', { class: 'btn ghost', type: 'button', onclick: guard(async () => { await window.BACKEND.logout().catch(() => {}); logoutLocal(); }) }, t('logout'))))));
   }
   function loginView() {
     const login = h('input', { id: 'login', autocomplete: 'username', autocapitalize: 'none', required: true });
@@ -215,7 +277,8 @@
     h('h1', null, '🚗 ' + t('app')),
     h('div', { class: 'field' }, h('label', { for: 'login' }, t('loginName')), login),
     h('div', { class: 'field' }, h('label', { for: 'password' }, t('password')), pw), err,
-    h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('button', { class: 'btn', type: 'submit' }, t('login')), langSel));
+    h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('button', { class: 'btn', type: 'submit' }, t('login')), langSel),
+    h('p', { class: 'muted small' }, t('noAccount') + ' ', h('button', { class: 'btn ghost small', type: 'button', onclick: () => { st.screen = 'register'; st.regMode = null; render(); } }, t('register'))));
     return h('div', { class: 'wrap' }, h('div', { class: 'login' }, form));
   }
 
@@ -234,6 +297,21 @@
 
   // ======== O'qituvchi oynalari ========
   const VIEWS = {};
+  VIEWS.requests = async (view) => {
+    await loadGroups();
+    const rows = await api('/api/requests');
+    const redo = () => VIEWS.requests(view).catch((e) => setView(view, h('p', { class: 'muted' }, t('error') + ': ' + e.message)));
+    setView(view, h('h2', null, t('requestsTitle')),
+      rows.length ? rows.map((r) => {
+        const gsel = r.role === 'student' ? h('select', { 'aria-label': t('group'), style: { width: 'auto' } }, st.groups.map((g) => h('option', { value: g.id, selected: g.id === st.group }, g.name))) : null;
+        return h('div', { class: 'card' }, h('div', { class: 'row', style: { justifyContent: 'space-between' } },
+          h('div', null, h('strong', null, r.name), ' ', h('span', { class: 'chip' }, t(r.role)), h('div', { class: 'muted small' }, t('loginName') + ': ', h('code', null, r.login))),
+          h('div', { class: 'row' }, gsel,
+            h('button', { class: 'btn small', type: 'button', onclick: guard(async () => { if (gsel && !gsel.value) return toast(t('noGroups'), true); await api('/api/requests/' + r.id + '/approve', 'POST', { group_id: gsel ? gsel.value : null }); toast(t('approved')); redo(); }) }, t('approve')),
+            confirmBtn(t('reject'), async () => { await api('/api/requests/' + r.id, 'DELETE'); redo(); }))));
+      }) : h('div', { class: 'card' }, empty(t('noRequests'))));
+    refreshPending();
+  };
   VIEWS.groups = async (view) => {
     await loadGroups();
     const credBox = h('div');
