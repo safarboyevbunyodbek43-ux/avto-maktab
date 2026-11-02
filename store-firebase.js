@@ -10,7 +10,7 @@ import {
 
 const emailOf = (login) => `${login}@avto.local`;
 
-function mapError(e) {
+function mapError(e, where) {
   const c = (e && e.code) || '';
   const m = (msg, extra) => Object.assign(new Error(msg), extra);
   if (['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email', 'auth/invalid-login-credentials'].includes(c)) return m("Login yoki parol noto'g'ri", { status: 401 });
@@ -20,11 +20,18 @@ function mapError(e) {
   if (c === 'auth/network-request-failed' || c === 'unavailable') return m("Internet bilan aloqa yo'q");
   if (c === 'auth/weak-password') return m("Parol juda qisqa (kamida 6 belgi)");
   if (c === 'auth/requires-recent-login') return m("Xavfsizlik uchun chiqib, qayta kiring va yana urinib ko'ring");
-  if (c === 'permission-denied') return m("Ruxsat yo'q. Firestore qoidalari (firestore.rules) to'g'ri qo'yilganini tekshiring", { status: 403 });
+  if (c === 'permission-denied') return m("Ruxsat yo'q" + (where ? ' [' + where + ']' : '') + ". Firestore qoidalari (firestore.rules) to'g'ri qo'yilganini tekshiring", { status: 403 });
   if (c === 'failed-precondition') return m("Firestore bazasi yaratilmagan yoki indeks kerak: " + (e.message || ''));
   return e instanceof Error ? e : m(String(e));
 }
-const wrap = (fn) => async (...a) => { try { return await fn(...a); } catch (e) { throw mapError(e); } };
+const wrap = (fn, name) => async (...a) => {
+  try { return await fn(...a); } catch (e) {
+    // qaysi amal va qaysi yig'ma (collection) rad etilgani xabarda ko'rinadi: nosozlikni tez topish uchun
+    const col = Array.isArray(a[0]) ? [...new Set(a[0].map((o) => o.col))].join(',') : a[0];
+    const extra = name === 'query' && Array.isArray(a[1]) ? ' ' + a[1].map((f) => f[0]).join('+') : '';
+    throw mapError(e, name ? name + ': ' + col + extra : '');
+  }
+};
 
 export async function createFirebaseBackend(config) {
   const app = initializeApp(config);
@@ -32,11 +39,11 @@ export async function createFirebaseBackend(config) {
   const db = getFirestore(app);
 
   const store = {
-    get: wrap(async (c, id) => { const s = await getDoc(doc(db, c, String(id))); return s.exists() ? s.data() : null; }),
-    set: wrap(async (c, id, data) => { await setDoc(doc(db, c, String(id)), data); }),
-    update: wrap(async (c, id, data) => { await updateDoc(doc(db, c, String(id)), data); }),
-    add: wrap(async (c, data) => (await addDoc(collection(db, c), data)).id),
-    del: wrap(async (c, id) => { await deleteDoc(doc(db, c, String(id))); }),
+    get: wrap(async (c, id) => { const s = await getDoc(doc(db, c, String(id))); return s.exists() ? s.data() : null; }, 'get'),
+    set: wrap(async (c, id, data) => { await setDoc(doc(db, c, String(id)), data); }, 'set'),
+    update: wrap(async (c, id, data) => { await updateDoc(doc(db, c, String(id)), data); }, 'update'),
+    add: wrap(async (c, data) => (await addDoc(collection(db, c), data)).id, 'add'),
+    del: wrap(async (c, id) => { await deleteDoc(doc(db, c, String(id))); }, 'del'),
     query: wrap(async (c, filters = []) => {
       const inF = filters.find((f) => f[1] === 'in'); const rest = filters.filter((f) => f !== inF);
       const base = rest.map(([f, op, v]) => where(f, op, v));
@@ -45,7 +52,7 @@ export async function createFirebaseBackend(config) {
       const [f, , vals] = inF; const out = [];
       for (let i = 0; i < vals.length; i += 30) out.push(...(await run([where(f, 'in', vals.slice(i, i + 30))])));
       return out;
-    }),
+    }, 'query'),
     batch: wrap(async (ops) => {
       for (let i = 0; i < ops.length; i += 400) {
         const b = writeBatch(db);
@@ -55,7 +62,7 @@ export async function createFirebaseBackend(config) {
         }
         await b.commit();
       }
-    }),
+    }, 'batch'),
   };
 
   // Boshqa foydalanuvchi hisobi ustida ishlash o'qituvchi sessiyasini buzmasligi uchun alohida "ikkinchi ilova" ishlatiladi
