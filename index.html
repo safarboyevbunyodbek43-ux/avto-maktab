@@ -1,18 +1,214 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Avto maktab</title>
-<link rel="icon" href="logo.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#0e6b8f">
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do'kon CRM - Savdo va Qarz Daftari</title>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: var(--bg); color: #334155; }
+        .navbar { background: var(--primary); color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        input, button, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        button.btn-danger { background: var(--danger); }
+        button.btn-success { background: var(--success); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; }
+        .flex { display: flex; gap: 10px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .stat-box { background: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-box.green { background: #dcfce7; color: #14532d; }
+        .stat-box.red { background: #fee2e2; color: #7f1d1d; }
+    </style>
 </head>
 <body>
-<div id="app"><p style="padding:24px;font-family:system-ui">Yuklanmoqda...</p></div>
-<div id="toast" role="status" aria-live="polite" hidden></div>
-<script src="config.js"></script>
-<script type="module" src="main.js?v=3"></script>
+
+<div class="navbar">🛒 DO'KON CRM TIZIMI</div>
+
+<div class="container">
+    <!-- 1. MOLIYA JADVALI -->
+    <div class="card">
+        <h2>💰 Moliyaviy Holat</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span style="font-size: 12px; color: #64748b;">Tikilgan Pul:</span>
+                <div id="disp-invest" style="font-size: 16px; font-weight: bold;">0</div>
+            </div>
+            <div class="stat-box green">
+                <span style="font-size: 12px;">Umumiy Tushum:</span>
+                <div id="disp-tushum" style="font-size: 16px; font-weight: bold;">0</div>
+            </div>
+            <div class="stat-box" id="nolga-box">
+                <span style="font-size: 12px;">Nolga chiqish holati:</span>
+                <div id="disp-nolga" style="font-size: 14px; font-weight: bold;">0</div>
+            </div>
+        </div>
+        <label>Boshlang'ich investitsiya summasi (so'm):</label>
+        <div class="flex">
+            <input type="number" id="invest-input" placeholder="Masalan: 50000000">
+            <button onclick="setInvestitsiya()" style="width: 120px;">Saqlash</button>
+        </div>
+    </div>
+
+    <!-- 2. TEZKOR KALKULYATOR -->
+    <div class="card">
+        <h2>🧮 Tezkor Kalkulyator</h2>
+        <div style="font-size: 24px; font-weight: bold; text-align: right; background: #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 10px;" id="calc-screen">0 so'm</div>
+        <div class="flex">
+            <input type="number" id="calc-input" placeholder="Narxni kiriting">
+            <button onclick="addCalc()" class="btn-success" style="width: 80px;">+</button>
+            <button onclick="clearCalc()" class="btn-danger" style="width: 80px;">C</button>
+        </div>
+        <button onclick="savdogaQosh()" class="btn-success" style="margin-top: 10px; background: #059669;">🛒 Savdoga qo'shish</button>
+    </div>
+
+    <!-- 3. QARZ DAFTARI -->
+    <div class="card">
+        <h2>📋 Qarz Daftari</h2>
+        <div class="flex">
+            <input type="text" id="qarz-ism" placeholder="Mijoz ismi">
+            <input type="number" id="qarz-summa" placeholder="Qarz summasi">
+        </div>
+        <button onclick="qarzQosh()">Qarz yozish</button>
+        <table id="qarz-table">
+            <thead>
+                <tr>
+                    <th>Mijoz</th>
+                    <th>Qarz summasi</th>
+                    <th>Amal</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 4. STATISTIKA VA GRAFIK -->
+    <div class="card">
+        <h2>📊 Savdo Statistikasi</h2>
+        <div class="stats-grid">
+            <div class="stat-box">Kunlik:<br><b id="stat-kun">0</b></div>
+            <div class="stat-box">Haftalik:<br><b id="stat-hafta">0</b></div>
+            <div class="stat-box">Oylik:<br><b id="stat-oy">0</b></div>
+        </div>
+        <div style="height: 220px; position: relative;">
+            <canvas id="savdoChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    let moliya = JSON.parse(localStorage.getItem('moliya')) || { investitsiya: 0, tushum: 0, savdolar: [] };
+    let qarzlar = JSON.parse(localStorage.getItem('qarzlar')) || [];
+    let calcSumma = 0;
+
+    function saveDB() {
+        localStorage.setItem('moliya', JSON.stringify(moliya));
+        localStorage.setItem('qarzlar', JSON.stringify(qarzlar));
+        yangilaEkran();
+    }
+
+    function addCalc() {
+        let val = parseFloat(document.getElementById('calc-input').value) || 0;
+        if(val > 0) {
+            calcSumma += val;
+            document.getElementById('calc-screen').innerText = calcSumma.toLocaleString() + " so'm";
+            document.getElementById('calc-input').value = '';
+        }
+    }
+    function clearCalc() {
+        calcSumma = 0;
+        document.getElementById('calc-screen').innerText = "0 so'm";
+    }
+    function savdogaQosh() {
+        if(calcSumma <= 0) return;
+        if(confirm("Ushbu " + calcSumma.toLocaleString() + " so'mlik hisobni savdoga qo'shasizmi?")) {
+            moliya.tushum += calcSumma;
+            moliya.savdolar.push({ sana: new Date().toISOString(), summa: calcSumma });
+            clearCalc();
+            saveDB();
+        }
+    }
+
+    function setInvestitsiya() {
+        let inv = parseFloat(document.getElementById('invest-input').value) || 0;
+        moliya.investitsiya = inv;
+        saveDB();
+    }
+
+    function qarzQosh() {
+        let ism = document.getElementById('qarz-ism').value;
+        let summa = parseFloat(document.getElementById('qarz-summa').value) || 0;
+        if(ism && summa > 0) {
+            qarzlar.push({ id: Date.now(), ism: ism, summa: summa });
+            document.getElementById('qarz-ism').value = '';
+            document.getElementById('qarz-summa').value = '';
+            saveDB();
+        }
+    }
+    function qarzUz(id) {
+        let q = qarzlar.find(x => x.id === id);
+        if(confirm(q.ism + " qarzni to'ladi deb hisoblab savdoga qo'shilsinmi?")) {
+            moliya.tushum += q.summa;
+            moliya.savdolar.push({ sana: new Date().toISOString(), summa: q.summa });
+            qarzlar = qarzlar.filter(x => x.id !== id);
+            saveDB();
+        }
+    }
+
+    let chart = null;
+    function yangilaEkran() {
+        document.getElementById('disp-invest').innerText = moliya.investitsiya.toLocaleString() + " so'm";
+        document.getElementById('disp-tushum').innerText = moliya.tushum.toLocaleString() + " so'm";
+        
+        let farq = moliya.tushum - moliya.investitsiya;
+        let nBox = document.getElementById('nolga-box');
+        if(farq >= 0) {
+            nBox.className = "stat-box green";
+            document.getElementById('disp-nolga').innerText = "Foyda: +" + farq.toLocaleString();
+        } else {
+            nBox.className = "stat-box red";
+            document.getElementById('disp-nolga').innerText = "Zarar: " + farq.toLocaleString();
+        }
+
+        let tbody = document.querySelector('#qarz-table tbody');
+        tbody.innerHTML = '';
+        qarzlar.forEach(q => {
+            tbody.innerHTML += `<tr><td>${q.ism}</td><td>${q.summa.toLocaleString()} so'm</td><td><button onclick="qarzUz(${q.id})" class="btn-success" style="padding:5px 10px; margin:0; width:auto;">Yopildi</button></td></tr>`;
+        });
+
+        let kunlik = 0, haftalik = 0, oylik = 0;
+        let hozir = new Date();
+        moliya.savdolar.forEach(s => {
+            let sSana = new Date(s.sana);
+            let farqKun = (hozir - sSana) / (1000 * 60 * 60 * 24);
+            if(farqKun <= 1) kunlik += s.summa;
+            if(farqKun <= 7) haftalik += s.summa;
+            if(farqKun <= 30) oylik += s.summa;
+        });
+        document.getElementById('stat-kun').innerText = kunlik.toLocaleString() + " s.";
+        document.getElementById('stat-hafta').innerText = haftalik.toLocaleString() + " s.";
+        document.getElementById('stat-oy').innerText = oylik.toLocaleString() + " s.";
+
+        if(chart) { chart.destroy(); }
+        let ctx = document.getElementById('savdoChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Kun', 'Hafta', 'Oy'],
+                datasets: [{ label: 'Savdo', data: [kunlik, haftalik, oylik], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    window.onload = yangilaEkran;
+</script>
 </body>
 </html>
